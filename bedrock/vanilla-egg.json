@@ -40,7 +40,7 @@
     },
     {
       "name": "Cloudflare Tunnel Token",
-      "description": "Optional",
+      "description": "Optional For Cloudflare Tunnel Integration.\r\n\r\nGet Your Token From The Cloudflare Dashboard When Creating A Tunnel.",
       "env_variable": "TUNNEL_TOKEN",
       "default_value": "",
       "user_viewable": true,
@@ -70,7 +70,7 @@
     },
     {
       "name": "Gamemode",
-      "description": "Allowed Values: \"survival\", \"creative\", or \"adventure\"",
+      "description": "Allowed Values: \"survival\", \"creative\", Or \"adventure\"",
       "env_variable": "GAMEMODE",
       "default_value": "survival",
       "user_viewable": true,
@@ -80,9 +80,9 @@
     },
     {
       "name": "Difficulty",
-      "description": "Allowed Values: \"peaceful\", \"easy\", \"normal\", or \"hard\"",
+      "description": "Allowed Values: \"peaceful\", \"easy\", \"normal\", Or \"hard\"",
       "env_variable": "DIFFICULTY",
-      "default_value": "easy",
+      "default_value": "hard",
       "user_viewable": true,
       "user_editable": true,
       "rules": "required|string|in:peaceful,easy,normal,hard",
@@ -90,7 +90,7 @@
     },
     {
       "name": "Allow Cheats",
-      "description": "If true then cheats like commands can be used.\r\n\r\nAllowed values: \"true\" or \"false\"",
+      "description": "If True Then Cheats Like Commands Can Be Used.\r\n\r\nAllowed Values: \"true\" Or \"false\"",
       "env_variable": "CHEATS",
       "default_value": "false",
       "user_viewable": true,

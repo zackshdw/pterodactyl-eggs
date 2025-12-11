@@ -4,10 +4,10 @@
     "version": "PTDL_v2",
     "update_url": null
   },
-  "exported_at": "2025-12-06T11:45:33+02:00",
-  "name": "Bedrock",
+  "exported_at": "2025-12-11T12:04:53+00:00",
+  "name": "Vanilla Bedrock",
   "author": "zackshdw@gmail.com",
-  "description": "Bedrock Edition With Cloudflared Support",
+  "description": "Bedrock Dedicated Server + Cloudflare Tunnel",
   "features": ["pid_limit"],
   "docker_images": {
     "ghcr.io/zackshdw/bedrock:debian": "ghcr.io/zackshdw/bedrock:debian"
@@ -16,13 +16,13 @@
   "startup": "./bedrock_server",
   "config": {
     "files": "{\r\n    \"server.properties\": {\r\n        \"parser\": \"properties\",\r\n        \"find\": {\r\n            \"server-port\": \"{{server.build.default.port}}\",\r\n            \"server-name\": \"{{server.build.env.SERVERNAME}}\",\r\n            \"gamemode\": \"{{server.build.env.GAMEMODE}}\",\r\n            \"difficulty\": \"{{server.build.env.DIFFICULTY}}\",\r\n            \"allow-cheats\": \"{{server.build.env.CHEATS}}\"\r\n        }\r\n    }\r\n}",
-    "startup": "{\r\n    \"done\": \"Server started\"\r\n}",
+    "startup": "{\r\n    \"done\": \"Server Started\"\r\n}",
     "logs": "{}",
     "stop": "stop"
   },
   "scripts": {
     "installation": {
-      "script": "#!/bin/bash\napt update\napt install -y zip unzip wget curl jq\nif [ ! -d /mnt/server/ ]; then\nmkdir /mnt/server/\nfi\ncd /mnt/server\nif [ -z \"${BEDROCK_VERSION}\" ] || [ \"${BEDROCK_VERSION}\" == \"latest\" ]; then\necho -e \"\\n Downloading Latest Bedrock Server\"\necho \"Fetching Version Information...\"\nVERSION_JSON=$(curl -s \"https://raw.githubusercontent.com/Bedrock-OSS/BDS-Versions/main/versions.json\")\nBEDROCK_VERSION=$(echo \"$VERSION_JSON\" | jq -r '.linux.stable')\nCDN_ROOT=$(echo \"$VERSION_JSON\" | jq -r '.cdn_root')\nif [ -z \"$BEDROCK_VERSION\" ] || [ \"$BEDROCK_VERSION\" == \"null\" ]; then\necho \"Error: Could Not Fetch Version Information\"\nexit 1\nfi\nDOWNLOAD_URL=\"${CDN_ROOT}/bin-linux/bedrock-server-${BEDROCK_VERSION}.zip\"\nelse \necho -e \"\\n Downloading ${BEDROCK_VERSION}\"\nDOWNLOAD_URL=\"https://www.minecraft.net/bedrockdedicatedserver/bin-linux/bedrock-server-${BEDROCK_VERSION}.zip\"\nfi\nDOWNLOAD_FILE=$(basename \"$DOWNLOAD_URL\")\necho -e \"Backing Up Config Files\"\nrm -f *.bak\n[ -f server.properties ] && cp server.properties server.properties.bak\n[ -f permissions.json ] && cp permissions.json permissions.json.bak\n[ -f allowlist.json ] && cp allowlist.json allowlist.json.bak\necho -e \"Downloading Bedrock Server Version: $BEDROCK_VERSION\"\necho -e \"Download URL: $DOWNLOAD_URL\"\nwget -O \"$DOWNLOAD_FILE\" \"$DOWNLOAD_URL\"\nif [ ! -f \"$DOWNLOAD_FILE\" ] || [ ! -s \"$DOWNLOAD_FILE\" ]; then\necho \"Error: Download Failed Or File Is Empty\"\nexit 1\nfi\necho -e \"Unpacking Server Files\"\nunzip -o \"$DOWNLOAD_FILE\"\nif [ $? -ne 0 ]; then\necho \"Error: Failed To Unzip File\"\nexit 1\nfi\necho -e \"Cleaning Up After Installing\"\nrm -f \"$DOWNLOAD_FILE\"\necho -e \"Restoring Backup Config Files\"\n[ -f server.properties.bak ] && cp -f server.properties.bak server.properties\n[ -f permissions.json.bak ] && cp -f permissions.json.bak permissions.json\n[ -f allowlist.json.bak ] && cp -f allowlist.json.bak allowlist.json\nchmod +x bedrock_server\necho -e \"Install Completed\"",
+      "script": "#!/bin/bash\r\n\r\napt update\r\napt install -y zip unzip wget curl jq\r\n\r\nif [ ! -d /mnt/server/ ]; then\r\n    mkdir /mnt/server/\r\nfi\r\ncd /mnt/server\r\n\r\nif [ -z \"${BEDROCK_VERSION}\" ] || [ \"${BEDROCK_VERSION}\" == \"latest\" ]; then\r\n    echo -e \"\\n Downloading Latest Bedrock Server\"\r\n    echo \"Fetching Version Information...\"\r\n    \r\n    VERSION_JSON=$(curl -s \"https://raw.githubusercontent.com/Bedrock-OSS/BDS-Versions/main/versions.json\")\r\n    BEDROCK_VERSION=$(echo \"$VERSION_JSON\" | jq -r '.linux.stable')\r\n    CDN_ROOT=$(echo \"$VERSION_JSON\" | jq -r '.cdn_root')\r\n    \r\n    if [ -z \"$BEDROCK_VERSION\" ] || [ \"$BEDROCK_VERSION\" == \"null\" ]; then\r\n        echo \"Error: Could Not Fetch Version Information\"\r\n        exit 1\r\n    fi\r\n    \r\n    DOWNLOAD_URL=\"${CDN_ROOT}/bin-linux/bedrock-server-${BEDROCK_VERSION}.zip\"\r\nelse \r\n    echo -e \"\\n Downloading ${BEDROCK_VERSION}\"\r\n    DOWNLOAD_URL=\"https://www.minecraft.net/bedrockdedicatedserver/bin-linux/bedrock-server-${BEDROCK_VERSION}.zip\"\r\nfi\r\n\r\nDOWNLOAD_FILE=$(basename \"$DOWNLOAD_URL\")\r\nTIMESTAMP=$(date +%Y%m%d_%H%M%S)\r\n\r\nif [ -d \"worlds\" ]; then\r\n    echo -e \"\\nBacking Up World Data\"\r\n    WORLD_BACKUP=\"worlds_backup_${TIMESTAMP}.tar.gz\"\r\n    tar -czf \"$WORLD_BACKUP\" worlds/\r\n    \r\n    if [ -f \"$WORLD_BACKUP\" ]; then\r\n        echo \"    - World Backup Created: $WORLD_BACKUP\"\r\n    else\r\n        echo \"Warning: World Backup Failed\"\r\n    fi\r\nfi\r\n\r\nCONFIG_BACKED_UP=false\r\nif [ -f server.properties ] || [ -f permissions.json ] || [ -f allowlist.json ]; then\r\n    echo -e \"\\nBacking Up Config Files\"\r\n    rm -f *.bak\r\n    \r\n    if [ -f server.properties ]; then\r\n        mv server.properties server.properties.bak\r\n        echo \"    - Backed Up: server.properties\"\r\n    fi\r\n    \r\n    if [ -f permissions.json ]; then\r\n        mv permissions.json permissions.json.bak\r\n        echo \"    - Backed Up: permissions.json\"\r\n    fi\r\n    \r\n    if [ -f allowlist.json ]; then\r\n        mv allowlist.json allowlist.json.bak\r\n        echo \"    - Backed Up: allowlist.json\"\r\n    fi\r\n    \r\n    CONFIG_BACKED_UP=true\r\nfi\r\n\r\necho -e \"\\nDownloading Bedrock Server Version: $BEDROCK_VERSION\"\r\necho -e \"Download URL: $DOWNLOAD_URL\"\r\nwget -O \"$DOWNLOAD_FILE\" \"$DOWNLOAD_URL\"\r\n\r\nif [ ! -f \"$DOWNLOAD_FILE\" ] || [ ! -s \"$DOWNLOAD_FILE\" ]; then\r\n    echo \"Error: Download Failed Or File Is Empty\"\r\n    \r\n    if [[ \"$DOWNLOAD_URL\" == *\"$CDN_ROOT\"* ]]; then\r\n        echo \"Attempting Fallback Download From minecraft.net\"\r\n        FALLBACK_URL=\"https://www.minecraft.net/bedrockdedicatedserver/bin-linux/bedrock-server-${BEDROCK_VERSION}.zip\"\r\n        echo -e \"Fallback URL: $FALLBACK_URL\"\r\n        wget -O \"$DOWNLOAD_FILE\" \"$FALLBACK_URL\"\r\n        \r\n        if [ ! -f \"$DOWNLOAD_FILE\" ] || [ ! -s \"$DOWNLOAD_FILE\" ]; then\r\n            echo \"Error: Fallback Download Also Failed\"\r\n            exit 1\r\n        fi\r\n        echo \"Fallback Download Successful\"\r\n    else\r\n        exit 1\r\n    fi\r\nfi\r\n\r\necho -e \"\\nUnpacking Server Files\"\r\nunzip -o \"$DOWNLOAD_FILE\"\r\n\r\nif [ $? -ne 0 ]; then\r\n    echo \"Error: Failed To Unzip File\"\r\n    exit 1\r\nfi\r\n\r\necho -e \"\\nCleaning Up After Installing\"\r\nrm -f \"$DOWNLOAD_FILE\"\r\n\r\nif [ \"$CONFIG_BACKED_UP\" = true ]; then\r\n    echo -e \"\\n    - Restoring Backup Config Files\"\r\n    \r\n    if [ -f server.properties.bak ]; then\r\n        mv -f server.properties.bak server.properties\r\n        echo \"    - Restored: server.properties\"\r\n    fi\r\n    \r\n    if [ -f permissions.json.bak ]; then\r\n        mv -f permissions.json.bak permissions.json\r\n        echo \"    - Restored: permissions.json\"\r\n    fi\r\n    \r\n    if [ -f allowlist.json.bak ]; then\r\n        mv -f allowlist.json.bak allowlist.json\r\n        echo \"    - Restored: allowlist.json\"\r\n    fi\r\nfi\r\n\r\nif [ -f \"$WORLD_BACKUP\" ]; then\r\n    echo -e \"\\nRestoring World Data From Backup\"\r\n    rm -rf worlds/\r\n    tar -xzf \"$WORLD_BACKUP\"\r\n    \r\n    if [ -d \"worlds\" ]; then\r\n        echo \"    - World Data Restored Successfully\"\r\n    else\r\n        echo \"Warning: World Restore Failed\"\r\n    fi\r\nfi\r\n\r\nchmod +x bedrock_server\r\necho -e \"\\nInstall Completed\"",
       "container": "ghcr.io/zackshdw/bedrock:debian-installer",
       "entrypoint": "bash"
     }
@@ -30,7 +30,7 @@
   "variables": [
     {
       "name": "Bedrock Version",
-      "description": "The version of bedrock. (Ex. 1.7.0.13)\r\n\r\nDefault version is latest.",
+      "description": "The Version Of Bedrock. (Ex. 1.21.130.4)\r\n\r\nDefault Version Is Latest.",
       "env_variable": "BEDROCK_VERSION",
       "default_value": "latest",
       "user_viewable": true,
@@ -40,7 +40,7 @@
     },
     {
       "name": "Cloudflare Tunnel Token",
-      "description": "Optional: Cloudflare Tunnel token for secure external access",
+      "description": "Optional",
       "env_variable": "TUNNEL_TOKEN",
       "default_value": "",
       "user_viewable": true,
@@ -50,7 +50,7 @@
     },
     {
       "name": "ld lib path",
-      "description": "Library path required for bedrock",
+      "description": "Library Path Required For Bedrock",
       "env_variable": "LD_LIBRARY_PATH",
       "default_value": ".",
       "user_viewable": false,
@@ -60,7 +60,7 @@
     },
     {
       "name": "Server Name",
-      "description": "The name for the server",
+      "description": "The Name For The Server",
       "env_variable": "SERVERNAME",
       "default_value": "Bedrock Dedicated Server",
       "user_viewable": true,
@@ -70,7 +70,7 @@
     },
     {
       "name": "Gamemode",
-      "description": "Allowed values: \"survival\", \"creative\", or \"adventure\"",
+      "description": "Allowed Values: \"survival\", \"creative\", or \"adventure\"",
       "env_variable": "GAMEMODE",
       "default_value": "survival",
       "user_viewable": true,
@@ -80,7 +80,7 @@
     },
     {
       "name": "Difficulty",
-      "description": "Allowed values: \"peaceful\", \"easy\", \"normal\", or \"hard\"",
+      "description": "Allowed Values: \"peaceful\", \"easy\", \"normal\", or \"hard\"",
       "env_variable": "DIFFICULTY",
       "default_value": "easy",
       "user_viewable": true,
@@ -89,7 +89,7 @@
       "field_type": "text"
     },
     {
-      "name": "Allow cheats",
+      "name": "Allow Cheats",
       "description": "If true then cheats like commands can be used.\r\n\r\nAllowed values: \"true\" or \"false\"",
       "env_variable": "CHEATS",
       "default_value": "false",
